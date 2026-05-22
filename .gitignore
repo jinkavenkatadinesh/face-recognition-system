@@ -157,3 +157,15 @@ Desktop.ini
 *.njsproj
 *.sln
 *.sw?
+
+
+# ==========================================
+# Project Specific Rules
+# ==========================================
+# Ignore programmatic PPTX files
+*.pptx
+
+# Ignore downloaded test dataset files but preserve directory templates
+/dataset/raw/*
+!/dataset/raw/test.jpg
+/dataset/output/*

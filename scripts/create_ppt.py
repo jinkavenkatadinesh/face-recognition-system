@@ -553,4 +553,4 @@ add_text_box(slide, Inches(1.5), Inches(5.2), Inches(10.3), Inches(0.5),
 # =============================================================================
 output_path = os.path.join(os.path.dirname(__file__), "..", "Face_Recognition_Project.pptx")
 prs.save(output_path)
-print(f"\n✅ Presentation saved to: {os.path.abspath(output_path)}")
+print(f"\n[+] Presentation saved to: {os.path.abspath(output_path)}")

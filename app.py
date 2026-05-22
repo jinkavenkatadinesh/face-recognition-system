@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 import os
 import time
-from mtcnn import MTCNN
 from PIL import Image
 import io
 
@@ -112,20 +111,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+from src import HybridFaceDetector, preprocess_pipeline
+
 # ==========================================
 # Caching Model Loaders for Speed
 # ==========================================
 @st.cache_resource
-def load_mtcnn():
-    return MTCNN()
-
-@st.cache_resource
-def load_haar_cascade():
+def load_detector():
+    # Cache the detector and underlying models
+    from mtcnn import MTCNN
+    mtcnn_detector = MTCNN()
     cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-    return cv2.CascadeClassifier(cascade_path)
+    haar_detector = cv2.CascadeClassifier(cascade_path)
+    return HybridFaceDetector(mtcnn_instance=mtcnn_detector, haar_instance=haar_detector)
 
-mtcnn_detector = load_mtcnn()
-haar_detector = load_haar_cascade()
+detector = load_detector()
+
 
 # ==========================================
 # Application Header
@@ -167,39 +168,6 @@ haar_neighbors = st.sidebar.slider("Min Neighbors", 1, 10, 3, 1, disabled=(algo_
 
 
 # ==========================================
-# Image Processing Core Pipeline
-# ==========================================
-def preprocess_image(img):
-    logs = []
-    
-    # Step 1: Resize
-    h, w = img.shape[:2]
-    if enable_resize and w > max_width:
-        scale = max_width / w
-        img = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-        logs.append(f"Resized from {w}x{h} to {img.shape[1]}x{img.shape[0]}")
-    else:
-        logs.append(f"Image processed at full scale: {w}x{h}")
-        
-    # Step 2: Denoise
-    if enable_denoise:
-        img = cv2.fastNlMeansDenoisingColored(img, None, denoise_strength, denoise_strength, 7, 21)
-        logs.append("Applied fast Non-Local Means Denoising")
-        
-    # Step 3: Brightness / Contrast normalization via CLAHE in LAB space
-    if enable_clahe:
-        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=clahe_clip, tileGridSize=(8, 8))
-        l = clahe.apply(l)
-        enhanced = cv2.merge([l, a, b])
-        img = cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
-        logs.append(f"Normalized illumination using CLAHE (clip={clahe_clip})")
-        
-    return img, logs
-
-
-# ==========================================
 # Application Workspace
 # ==========================================
 uploaded_file = st.file_uploader("📥 Drag and drop or browse an image to start face detection:", type=["jpg", "jpeg", "png"])
@@ -212,86 +180,36 @@ if uploaded_file is not None:
     if original_bgr is not None:
         # Preprocess
         with st.spinner("Executing preprocessing steps..."):
-            preprocessed_bgr, pre_logs = preprocess_image(original_bgr.copy())
+            preprocessed_bgr, pre_logs = preprocess_pipeline(
+                original_bgr.copy(),
+                enable_resize=enable_resize,
+                max_width=max_width,
+                enable_denoise=enable_denoise,
+                denoise_strength=denoise_strength,
+                enable_clahe=enable_clahe,
+                clahe_clip=clahe_clip
+            )
             
-        # Initialize detection states
-        annotated_image = preprocessed_bgr.copy()
-        faces_detected = []
-        engine_used = ""
-        
         # Start timer for algorithm execution
         start_time = time.time()
         
         # Determine and run algorithms
-        if algo_choice == "MTCNN Deep Learning":
-            rgb_img = cv2.cvtColor(preprocessed_bgr, cv2.COLOR_BGR2RGB)
-            results = mtcnn_detector.detect_faces(rgb_img)
-            faces_detected = [r for r in results if r['confidence'] >= mtcnn_confidence]
-            engine_used = "MTCNN Deep Learning"
-            
-            # Draw MTCNN detections
-            for result in faces_detected:
-                x, y, w, h = result['box']
-                x, y = max(0, x), max(0, y)
-                conf = result['confidence']
-                
-                # Draw bounding box
-                cv2.rectangle(annotated_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                cv2.putText(annotated_image, f"{conf:.2f}", (x, y - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
-                
-                # Draw facial landmarks (eyes, nose, mouth corners)
-                for keypoint, pt in result['keypoints'].items():
-                    cv2.circle(annotated_image, pt, 3, (255, 0, 0), -1)
-                    
-        elif algo_choice == "Haar Cascade Classical":
-            gray = cv2.cvtColor(preprocessed_bgr, cv2.COLOR_BGR2GRAY)
-            gray = cv2.equalizeHist(gray)
-            faces_haar = haar_detector.detectMultiScale(
-                gray,
-                scaleFactor=haar_scale,
-                minNeighbors=haar_neighbors,
-                minSize=(20, 20)
-            )
-            for (x, y, w, h) in faces_haar:
-                faces_detected.append({'box': [x, y, w, h], 'confidence': 1.0})
-                cv2.rectangle(annotated_image, (x, y), (x + w, y + h), (255, 165, 0), 2)
-            engine_used = "Haar Cascade"
-            
-        else: # Hybrid Mode
-            # Attempt MTCNN first
-            rgb_img = cv2.cvtColor(preprocessed_bgr, cv2.COLOR_BGR2RGB)
-            results = mtcnn_detector.detect_faces(rgb_img)
-            faces_detected = [r for r in results if r['confidence'] >= mtcnn_confidence]
-            engine_used = "MTCNN Deep Learning"
-            
-            # Draw MTCNN details
-            if len(faces_detected) > 0:
-                for result in faces_detected:
-                    x, y, w, h = result['box']
-                    x, y = max(0, x), max(0, y)
-                    conf = result['confidence']
-                    cv2.rectangle(annotated_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    cv2.putText(annotated_image, f"{conf:.2f}", (x, y - 5),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
-                    for keypoint, pt in result['keypoints'].items():
-                        cv2.circle(annotated_image, pt, 3, (255, 0, 0), -1)
-            else:
-                # Fallback to Haar Cascade
-                st.warning("⚠️ MTCNN found no faces. Activating Haar Cascade Fallback...")
-                gray = cv2.cvtColor(preprocessed_bgr, cv2.COLOR_BGR2GRAY)
-                gray = cv2.equalizeHist(gray)
-                faces_haar = haar_detector.detectMultiScale(
-                    gray,
-                    scaleFactor=haar_scale,
-                    minNeighbors=haar_neighbors,
-                    minSize=(20, 20)
-                )
-                for (x, y, w, h) in faces_haar:
-                    faces_detected.append({'box': [x, y, w, h], 'confidence': 1.0})
-                    cv2.rectangle(annotated_image, (x, y), (x + w, y + h), (255, 165, 0), 2)
-                engine_used = "Haar Fallback"
-                
+        mode_map = {
+            "Hybrid Pipeline (Best)": "hybrid",
+            "MTCNN Deep Learning": "mtcnn",
+            "Haar Cascade Classical": "haar"
+        }
+        mode = mode_map.get(algo_choice, "hybrid")
+        
+        # Run detection
+        faces_detected, annotated_image, engine_used = detector.detect(
+            preprocessed_bgr,
+            mode=mode,
+            mtcnn_confidence=mtcnn_confidence,
+            haar_scale=haar_scale,
+            haar_neighbors=haar_neighbors
+        )
+        
         execution_time = (time.time() - start_time) * 1000 # convert to ms
         
         # Display Premium Metrics Dashboard

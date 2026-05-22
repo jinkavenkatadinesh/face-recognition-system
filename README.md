@@ -1,122 +1,130 @@
-# 👤 Face Detection & Recognition Pipeline
+# 👤 Intelligent Face Detection & Recognition Pipeline
 
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.5%2B-green.svg?style=flat-square&logo=opencv&logoColor=white)](https://opencv.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.4%2B-orange.svg?style=flat-square&logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
 [![License](https://img.shields.io/badge/License-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 
-An intelligent, hybrid face detection pipeline that combines modern **Deep Learning (MTCNN)** and classical **Computer Vision (Haar Cascade)** approaches. The system handles end-to-end processing, from robust image preprocessing (denoising and CLAHE brightness/contrast normalization) to visual annotations and automatic PowerPoint generation.
+An intelligent, production-ready face detection and preprocessing pipeline that combines **Deep Learning (MTCNN)** and classical **Computer Vision (Haar Cascade)** approaches. The system handles end-to-end processing: from adaptive rescaling, color denoising, and CLAHE illumination compensation, to interactive visualization dashboards and automatic PowerPoint generation.
 
 ---
 
 ## 🌟 Key Features
 
-*   **Hybrid Detection Pipeline:** Uses deep learning-based **MTCNN** (Multi-task Cascaded Convolutional Networks) for high-accuracy face and landmark localization, with an automated **Haar Cascade** fallback for resource-constrained scenarios or extremely fast processing.
-*   **Robust Image Preprocessing:**
-    *   *Adaptive Resizing:* Automatically scales down high-resolution images to a maximum width of `800px` for optimal processing speed.
-    *   *Color Denoising:* Applies Non-Local Means Denoising (`fastNlMeansDenoisingColored`) to remove image grain and sensor noise.
-    *   *Adaptive Contrast Normalization (CLAHE):* Converts images to the `LAB` color space and performs Contrast Limited Adaptive Histogram Equalization on the Lightness (`L`) channel to normalize faces under extreme shadows or low-light conditions.
-*   **Automated Dataset Expander:** Includes a script to pull curated, high-quality, open-source face images from Pexels (e.g., side profiles, groups, family portraits, low-light) to thoroughly test detection accuracy.
-*   **Automated Slide Generator:** A script using `python-pptx` programmatically compiles a premium-themed PowerPoint presentation showcasing the project's architecture, methodology, and comparative analysis.
+*   **Hybrid Dual-Core Detection Engine:** Utilizes highly accurate deep learning-based **MTCNN** as the primary tracker (returning 5 facial landmarks), with a lightning-fast classical **Haar Cascade** fallback for resource-constrained environments.
+*   **Modular Image Preprocessing Library:**
+    *   *Adaptive Rescale:* Protects processing servers from latency spikes by automatically downscaling oversized images.
+    *   *Non-Local Means Denoising:* Eliminates sensor noise and compression grain.
+    *   *CLAHE Illumination Normalization:* Converts matrices into the LAB color space, equalizing brightness/contrast on the Lightness channel locally to handle extreme shadows.
+*   **Premium Web Application:** Run an interactive, glassmorphism-styled Streamlit interface to visualize parameters, test sliders, and inspect face analytics in real-time.
+*   **CLI Automations & Slides Compilation:** Fetch curated, high-quality test images from open sources automatically and build dynamic, professional PowerPoint slide reports programmatically.
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Architecture Layout
+
+The codebase has been refactored into a high-standard, professional open-source repository layout:
 
 ```bash
 FaceRecognitionProject/
-├── dataset/
-│   ├── raw/               # Raw test images (input)
-│   ├── output/            # Preprocessed and annotated images (output)
-│   └── test.jpg           # Initial system setup verification image
-├── models/                # Reserved for trained weight models
-├── scripts/
-│   ├── test_setup.py      # Verifies local system environment & libraries
-│   ├── expand_dataset.py  # Fetches additional sample face images from Pexels
-│   ├── face_detection.py  # Fully preprocessed detection pipeline (MTCNN + Haar fallback)
-│   ├── mtcnn_detection.py # Pure MTCNN detection script
-│   └── create_ppt.py      # Programmatic PowerPoint generation script
-├── .gitignore             # Git exclusion rules
-├── requirements.txt       # Project python dependencies
-└── README.md              # Project documentation (this file)
+├── dataset/                  # Test dataset directory
+│   ├── raw/                  # Downloaded test inputs
+│   └── output/               # preprocessed and annotated outputs
+├── docs/                     # Comprehensive documentation guides
+│   ├── architecture.md       # Pipeline workflows, mathematical grids, and fallbacks
+│   └── setup_guide.md        # Environment setup for CLI & Web app
+├── models/                   # Reserved folder for deep trained neural weights
+├── scripts/                  # Command-line utility automations
+│   ├── test_setup.py         # Diagnostic environment validation script
+│   ├── expand_dataset.py     # Pulls face images from public-domain providers
+│   ├── face_detection.py     # Batch CLI pipeline script (powered by src/)
+│   └── create_ppt.py         # Programmatic slide deck generation script
+├── src/                      # [NEW] Reusable core package library
+│   ├── __init__.py           # Declares package APIs
+│   ├── detector.py           # Core HybridFaceDetector engine
+│   └── utils.py              # Preprocessing algorithms (CLAHE, scale, noise)
+├── .gitignore                # Optimized exclusion guidelines
+├── ABOUT.md                  # Deep technical landscape justifications
+├── CHANGELOG.md              # Semantic version changelog details
+├── CODE_OF_CONDUCT.md        # Standard Contributor Covenant CoC
+├── CONTRIBUTING.md           # Coding style, conventions, and PR guidelines
+├── LICENSE                   # Open-source MIT License
+├── README.md                 # Project roadmap overview (this document)
+└── requirements.txt          # Defined python package dependencies
 ```
 
 ---
 
 ## ⚙️ Installation & Setup
 
-Ensure you have **Python 3.8+** installed. Then, follow these steps:
+Ensure you have **Python 3.8+** installed. Detailed operating-system steps are available in the [Setup Guide](file:///C:/face%20regonization%20system/FaceRecognitionProject/docs/setup_guide.md).
 
-### 1. Clone & Navigate to the Repository
+### 1. Clone & Navigate
 ```bash
 git clone https://github.com/jinkavenkatadinesh/face-recognition-system.git
 cd face-recognition-system/FaceRecognitionProject
 ```
 
-### 2. Set Up a Virtual Environment
+### 2. Configure Virtual Environment & Packages
 ```bash
-# Create virtual environment
+# Windows
 python -m venv venv
+.\venv\Scripts\activate
 
-# Activate on Windows
-venv\Scripts\activate
-
-# Activate on macOS/Linux
+# macOS / Linux
+python3 -m venv venv
 source venv/bin/activate
-```
 
-### 3. Install Dependencies
-```bash
+# Install requirements
 pip install -r requirements.txt
 ```
 
 ---
 
-## 🚀 Running the Project
+## 🚀 Execution Routines
 
-### Step 1: Verify the Installation
-Run the setup script to verify OpenCV, NumPy, and TensorFlow are running correctly and to test basic image loading:
+With your virtual environment active, follow these steps to run the pipeline:
+
+### Step 1: Diagnose Installation
 ```bash
 python scripts/test_setup.py
 ```
 
-### Step 2: Download Test Images
-Use the dataset expander to pull a set of challenging face detection test samples:
+### Step 2: Download Test Dataset
 ```bash
 python scripts/expand_dataset.py
 ```
 
-### Step 3: Run the Detection Pipeline
-Execute the main hybrid face detection pipeline. This script will preprocess raw images, attempt MTCNN detection, fall back to Haar Cascades if no faces are found, and save annotated outputs:
+### Step 3: Run Batch CLI Detection
 ```bash
 python scripts/face_detection.py
 ```
+*Outputs are saved to `dataset/output/`.*
 
-### Step 4: Generate the Presentation
-Build the professional PowerPoint slide deck dynamically:
+### Step 4: Run Streamlit Web Application
+Launch the responsive, glassmorphism-styled dashboard:
+```bash
+streamlit run app.py
+```
+*This opens your browser automatically at `http://localhost:8501` to drag-and-drop custom images.*
+
+### Step 5: Programmatic Presentation slides
 ```bash
 python scripts/create_ppt.py
 ```
-This saves a sleek presentation file: `Face_Recognition_Project.pptx` in the project root.
+*Compiles system performance into a sleek `Face_Recognition_Project.pptx` deck in the root folder.*
 
 ---
 
-## 📊 Comparison: Haar Cascade vs. MTCNN
+## 🏛️ Comprehensive Guides
 
-| Metric | Haar Cascade | MTCNN (Deep Learning) |
-| :--- | :--- | :--- |
-| **Speed** | ⚡ Extremely Fast | 🐢 Slower (Highly optimized with GPU) |
-| **Accuracy** | Moderate (Misses non-frontal faces) | ✅ Extremely High |
-| **Pose Tolerance** | Primarily Frontal | Multi-angle (Side-profiles, tilted) |
-| **Lighting Sensitivity** | High (Degrades in low light) | Robust (Handles shadows & low-contrast) |
-| **Facial Landmarks** | ❌ None | ✅ 5-point landmarks (Eyes, nose, mouth) |
-| **Dependencies** | OpenCV only | TensorFlow + MTCNN package |
+-   **Deep Tech & Mathematical Logic**: See [docs/architecture.md](file:///C:/face%20regonization%20system/FaceRecognitionProject/docs/architecture.md) for structural schemas, algorithm matrices, and fallback thresholds.
+-   **Troubleshooting & Setup**: See [docs/setup_guide.md](file:///C:/face%20regonization%20system/FaceRecognitionProject/docs/setup_guide.md) for OS-specific support, execution policies, and headless libraries.
+-   **Contribution Guidelines**: See [CONTRIBUTING.md](file:///C:/face%20regonization%20system/FaceRecognitionProject/CONTRIBUTING.md) for PEP 8, conventional commits, and review guidelines.
 
 ---
 
-## 🔮 Future Roadmap
+## 📜 License & Conduct
 
-1.  **Face Recognition:** Integrate deep embedding extractors (like **FaceNet** or **ArcFace**) with a database to perform face identification (matching detected faces to names).
-2.  **Real-Time Video Stream:** Support live video/webcam processing with multi-object tracking.
-3.  **FastAPI REST Web App:** Construct an API server allowing users to upload images and receive JSON-formatted face coordinates and landmarks.
-4.  **Web UI:** Develop a modern frontend (React or simple Streamlit) for user-friendly testing.
+-   This project is licensed under the open-source **MIT License** - see [LICENSE](file:///C:/face%20regonization%20system/FaceRecognitionProject/LICENSE) for details.
+-   We hold our community to premium standards of collaboration - see [CODE_OF_CONDUCT.md](file:///C:/face%20regonization%20system/FaceRecognitionProject/CODE_OF_CONDUCT.md).

@@ -11,7 +11,7 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # Output folder
-raw_folder = os.path.join("..", "dataset", "raw")
+raw_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dataset", "raw")
 os.makedirs(raw_folder, exist_ok=True)
 
 # Free sample face images (public domain / freely available)
@@ -32,7 +32,7 @@ image_urls = {
     "img10_couple.jpg": "https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=600",
 }
 
-print("📥 Downloading sample face images...\n")
+print("[*] Downloading sample face images...\n")
 
 downloaded = 0
 failed = 0
@@ -41,25 +41,25 @@ for filename, url in image_urls.items():
     filepath = os.path.join(raw_folder, filename)
 
     if os.path.exists(filepath):
-        print(f"  ⏭ {filename} already exists, skipping.")
+        print(f"  [~] {filename} already exists, skipping.")
         continue
 
     try:
-        print(f"  ⬇ Downloading {filename}...", end=" ")
+        print(f"  [-] Downloading {filename}...", end=" ")
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=15) as response:
             data = response.read()
             with open(filepath, "wb") as f:
                 f.write(data)
         size_kb = len(data) / 1024
-        print(f"✅ ({size_kb:.1f} KB)")
+        print(f"SUCCESS ({size_kb:.1f} KB)")
         downloaded += 1
     except Exception as e:
-        print(f"❌ Failed: {e}")
+        print(f"FAILED: {e}")
         failed += 1
 
 print(f"\n{'='*40}")
-print(f"  ✅ Downloaded: {downloaded} images")
-print(f"  ❌ Failed: {failed} images")
-print(f"  📁 Total in dataset/raw/: {len(os.listdir(raw_folder))} images")
+print(f"  [+] Downloaded: {downloaded} images")
+print(f"  [-] Failed: {failed} images")
+print(f"  [+] Total in dataset/raw/: {len(os.listdir(raw_folder))} images")
 print(f"{'='*40}")
